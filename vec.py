@@ -28,7 +28,5 @@ def constrain(vector, bounds):
 
 
 def invert(vector):
-    inverted = ()
-    for i in vector:
-        inverted += (i * -1,)
-    return inverted
+    x, y = vector
+    return x * -1, y * -1

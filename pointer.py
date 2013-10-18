@@ -35,6 +35,7 @@ class Pointer(object):
                 operation = self.instructions[instruction]
                 cont, alive = operation(self)
                 return cont, alive
+                # return False, True
             else:
                 return DEFAULT_INSTRUCTION(self)
 

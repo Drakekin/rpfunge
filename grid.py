@@ -50,6 +50,5 @@ class TwoDimensionalLaheySpace(object):
         return self.storage.get(coord, " ")
 
     def __setitem__(self, coord, value):
-        assert isinstance(value, str)
-        assert len(value) == 1
+        assert len(coord) == 2
         self.storage[coord] = value

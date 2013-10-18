@@ -1,8 +1,6 @@
-from math import floor
-from random import choice
-from subprocess import call
-import sys
-from funge import DEFAULT_INSTRUCTION
+import os
+from time import time
+from funge import DEFAULT_INSTRUCTION, is_hex
 import vec
 
 
@@ -32,7 +30,6 @@ def minus(pointer):
     return False, True
 
 
-@register_instruction("*")
 def multiply(pointer):
     a = pointer.stack_pop()
     b = pointer.stack_pop()
@@ -44,7 +41,7 @@ def multiply(pointer):
 def divide(pointer):
     a = pointer.stack_pop()
     b = pointer.stack_pop()
-    pointer.stack.append(floor(b / a))
+    pointer.stack.append(b // a)
     return False, True
 
 
@@ -59,10 +56,10 @@ def mod(pointer):
 @register_instruction(";")
 def skip(pointer):
     pointer.move()
-    value = pointer.program[pointer.position]
+    value = pointer.program.__getitem__(pointer.position)
     while not value == ";":
         pointer.move()
-        value = pointer.program[pointer.position]
+        value = pointer.program.__getitem__(pointer.position)
     return False, True
 
 
@@ -95,6 +92,7 @@ def down(pointer):
 
 @register_instruction("[")
 def turn_left(pointer):
+    # TODO: Rewrite to be correct
     directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
     pointer.velocity = directions[directions.index(pointer.velocity)-1]
     return False, True
@@ -102,6 +100,7 @@ def turn_left(pointer):
 
 @register_instruction("]")
 def turn_right(pointer):
+    # TODO: Rewrite to be correct
     directions = [(1, 0), (0, -1), (-1, 0), (0, 1)]
     pointer.velocity = directions[directions.index(pointer.velocity)-1]
     return False, True
@@ -119,12 +118,13 @@ def right(pointer):
     return False, True
 
 
-# @register_instruction("?")
-# def random_direction(pointer):
-#     # directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-#     # pointer.velocity = choice(directions)
-#     # return False, True
-#     raise NotImplementedError("RPython cannot use the random library")
+@register_instruction("?")
+def random_direction(pointer):
+    # TODO: Rewrite to work with RPython
+    # directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    # pointer.velocity = choice(directions)
+    # return False, True
+    raise NotImplementedError("RPython cannot use the random library")
 
 
 @register_instruction("_")
@@ -170,17 +170,13 @@ def pop_stack(pointer):
 
 @register_instruction(".")
 def output_integer(pointer):
-    # Rpython doesn't know how to represent sys
-    # sys.stdout.write(str(pointer.stack_pop()))
-    print pointer.stack_pop()
+    os.write(1, str(pointer.stack_pop()))
     return False, True
 
 
 @register_instruction(",")
 def output_ascii(pointer):
-    # Rpython doesn't know how to represent sys
-    # sys.stdout.write(unichr(pointer.stack_pop()))
-    print unichr(pointer.stack_pop())
+    os.write(1, chr(pointer.stack_pop()))
     return False, True
 
 
@@ -196,7 +192,7 @@ def put(pointer):
     x = pointer.stack_pop()
     v = pointer.stack_pop()
     location = vec.add((x, y), pointer.storage_offset)
-    pointer.program[location] = unichr(v)
+    pointer.program.__setitem__(location, chr(v))
     return False, True
 
 
@@ -205,34 +201,27 @@ def get(pointer):
     y = pointer.stack_pop()
     x = pointer.stack_pop()
     location = vec.add((x, y), pointer.storage_offset)
-    pointer.stack.append(ord(pointer.program[location]))
+    pointer.stack.append(ord(pointer.program.__getitem__(location)))
     return False, True
 
 
-# @register_instruction("&")
-# def push_number(pointer):
-#     # user_input = raw_input("> ")
-#     # if user_input.isdigit():
-#     #     pointer.stack.append(ord(user_input))
-#     # return False, True
-#     raise NotImplementedError("RPython doesn't support raw_input")
+@register_instruction("&")
+def push_number(pointer):
+    num = os.read(0, 1)[0]
+    if is_hex(num):
+        pointer.stack.append(int(num, 16))
+    return False, True
 
 
-# @register_instruction("~")
-# def push_ascii(pointer):
-#     # user_input = raw_input("> ")
-#     # if len(user_input) > 1:
-#     #     user_input = user_input[-1]
-#     # elif len(user_input) == 0:
-#     #     user_input = " "
-#     # pointer.stack.append(ord(user_input))
-#     # return False, True
-#     raise NotImplementedError("RPython doesn't support raw_input")
+@register_instruction("~")
+def push_ascii(pointer):
+    pointer.stack.append(ord(os.read(0, 1)[0]))
+    return False, True
 
 
-# @register_instruction("i")
-# def load_file(pointer):
-#     raise NotImplementedError("File Loading Not Implemented")
+@register_instruction("i")
+def load_file(pointer):
+    raise NotImplementedError("File Loading Not Implemented")
 
 
 @register_instruction("j")
@@ -244,8 +233,8 @@ def jump(pointer):
 
 
 @register_instruction("k")
-def jump(pointer):
-    instruction = pointer.program[vec.add(pointer.position, pointer.velocity)]
+def repeat(pointer):
+    instruction = pointer.program.__getitem__(vec.add(pointer.position, pointer.velocity))
     if instruction in INSTRUCTIONS:
         operation = INSTRUCTIONS[instruction]
     else:
@@ -262,26 +251,64 @@ def clear_stack(pointer):
     return False, True
 
 
-# @register_instruction("o")
-# def output_file(pointer):
-#     raise NotImplementedError("File output not implemented")
+@register_instruction("o")
+def output_file(pointer):
+    raise NotImplementedError("File output not implemented")
 
 
-# @register_instruction("y")
-# def system_info(pointer):
-#     raise NotImplementedError("System information not implemented")
+@register_instruction("y")
+def system_info(pointer):
+    t = int(time())
+    clock = t % 24*60*60
+    day = t - clock
+    x, y = pointer.position
+    dx, dy = pointer.velocity
+    sx, sy = pointer.storage_offset
+    (lx, ly), (hx, hy) = pointer.program.extents()
+    info_stack = [
+        0b11000,  # Unbuffered IO, = implemented, no i or o commands and no concurrency
+        8,  # Bytes per cell
+        0,  # Handprint
+        1,  # Version number
+        1,  # = behaves like the C function system()
+        ord("/"),  # Path sep
+        2,  # Number of dimensions
+        0,  # Pointer ID
+        0,  # Unused
+        y,
+        x,
+        dy,
+        dx,
+        sy,
+        sx,
+        ly,
+        lx,
+        hy,
+        hx,
+        day,
+        clock,
+        len(pointer.stack_of_stacks) + 1,
+        len(pointer.stack)
+    ] + [len(s) for s in pointer.stack_of_stacks]
+
+    i = pointer.stack_pop()
+    if 0 < i <= len(info_stack):
+        pointer.stack.append(info_stack[i-1])
+    else:
+        while info_stack:
+            pointer.stack.append(info_stack.pop())
+
+    return False, True
 
 
 @register_instruction("q")
 def end_program(pointer):
-    # RPython threw a fit
-    # sys.exit(pointer.stack_pop())
-    return die(pointer)  # Kill the pointer instead
-
+    os._exit(pointer.stack_pop())
+    return False, False  # Just in case.
 
 @register_instruction("'")
 def fetch_char(pointer):
-    char = pointer.program[vec.add(pointer.position, pointer.velocity)]
+    char = pointer.program.__getitem__(vec.add(pointer.position, pointer.velocity))
     pointer.stack.append(ord(char))
     pointer.move()
     return False, True
@@ -289,20 +316,21 @@ def fetch_char(pointer):
 
 @register_instruction("s")
 def store_char(pointer):
-    pointer.program[vec.add(pointer.position, pointer.velocity)] = unichr(pointer.stack_pop())
+    pointer.program.__setitem__(vec.add(pointer.position, pointer.velocity), chr(pointer.stack_pop()))
     pointer.move()
     return False, True
 
 
-# @register_instruction("t")
-# def split(pointer):
-#     raise NotImplementedError("Single threaded only")
-#     # pos = pointer.position
-#     # vx, vy = pointer.velocity
-#     # vel = (vx * -1, vy * -1)
-#     # new_pointer = Pointer(2, pointer.program, pointer.execute, pointer.pointers)
-#     # new_pointer.position = pos
-#     # new_pointer.velocity = vel
+@register_instruction("t")
+def split(pointer):
+    # TODO: Reimplement to fit new Pointer
+    raise NotImplementedError("Single threaded only")
+    # pos = pointer.position
+    # vx, vy = pointer.velocity
+    # vel = (vx * -1, vy * -1)
+    # new_pointer = Pointer(2, pointer.program, pointer.execute, pointer.pointers)
+    # new_pointer.position = pos
+    # new_pointer.velocity = vel
 
 
 @register_instruction("z")
@@ -310,70 +338,72 @@ def no_op(pointer):
     return True, True
 
 
-@register_instruction("{")
-def start_block(pointer):
-    n = pointer.stack_pop()
-    soss = []
-    if n > 0:
-        z = 0
-        if n > len(pointer.stack):
-            z = len(pointer.stack) - n
-            n = len(pointer.stack)
-        soss += ([0] * z) + pointer.stack[-n:]
-        pointer.stack = pointer.stack[:-n]
-    else:
-        soss += abs(n) * [0]
-
-    x, y = pointer.storage_offset
-    soss += [x, y]
-    pointer.stack_of_stacks.append(soss)
-    pointer.storage_offset = vec.add(pointer.position, pointer.velocity)
-    return False, True
-
-
-@register_instruction("}")
-def end_block(pointer):
-    if not pointer.stack_of_stacks:
-        return
-
-    n = pointer.stack_pop()
-    soss = pointer.stack_of_stacks.pop()
-    pointer.storage_offset = soss[-2:]
-    soss = soss[:-2]
-    if n > 0:
-        z = 0
-        if n > len(soss):
-            z = len(soss) - n
-            n = len(soss)
-        pointer.stack += ([0] * z) + soss[-n:]
-        soss = soss[:-n]
-    else:
-        soss = soss[:n]
-
-    x, y = pointer.storage_offset
-    soss += [x, y]
-    pointer.stack_of_stacks.append(soss)
-    pointer.storage_offset = vec.add(pointer.position, pointer.velocity)
-    return False, True
-
-
-@register_instruction("u")
-def transfer(pointer):
-    if not pointer.stack_of_stacks:
-        return
-
-    n = pointer.stack_pop()
-    soss = pointer.stack_of_stacks[-1]
-    if n > 0:
-        dest, source = pointer.stack, soss
-    elif n == 0:
-        return
-    else:
-        dest, source = soss, pointer.stack
-
-    for _ in range(abs(n)):
-        dest.append(source.pop())
-    return False, True
+# TODO: Figure out why these functions do not work.
+#
+# @register_instruction("{")
+# def start_block(pointer):
+#     n = pointer.stack_pop()
+#     soss = []
+#     if n > 0:
+#         z = 0
+#         if n > len(pointer.stack):
+#             z = len(pointer.stack) - n
+#             n = len(pointer.stack)
+#         soss += ([0] * z) + pointer.stack[-n:]
+#         pointer.stack = pointer.stack[:-n]
+#     else:
+#         soss += abs(n) * [0]
+#
+#     x, y = pointer.storage_offset
+#     soss += [x, y]
+#     pointer.stack_of_stacks.append(soss)
+#     pointer.storage_offset = vec.add(pointer.position, pointer.velocity)
+#     return False, True
+#
+#
+# @register_instruction("}")
+# def end_block(pointer):
+#     if not pointer.stack_of_stacks:
+#         return
+#
+#     n = pointer.stack_pop()
+#     soss = pointer.stack_of_stacks.pop()
+#     pointer.storage_offset = soss[-2:]
+#     soss = soss[:-2]
+#     if n > 0:
+#         z = 0
+#         if n > len(soss):
+#             z = len(soss) - n
+#             n = len(soss)
+#         pointer.stack += ([0] * z) + soss[-n:]
+#         soss = soss[:-n]
+#     else:
+#         soss = soss[:n]
+#
+#     x, y = pointer.storage_offset
+#     soss += [x, y]
+#     pointer.stack_of_stacks.append(soss)
+#     pointer.storage_offset = vec.add(pointer.position, pointer.velocity)
+#     return False, True
+#
+#
+# @register_instruction("u")
+# def transfer(pointer):
+#     if not pointer.stack_of_stacks:
+#         return
+#
+#     n = pointer.stack_pop()
+#     soss = pointer.stack_of_stacks[-1]
+#     if n > 0:
+#         dest, source = pointer.stack, soss
+#     elif n == 0:
+#         return
+#     else:
+#         dest, source = soss, pointer.stack
+#
+#     for _ in range(abs(n)):
+#         dest.append(source.pop())
+#     return False, True
 
 
 @register_instruction("@")
@@ -392,9 +422,10 @@ def system_call(pointer):
     string = ""
     value = pointer.stack_pop()
     while value:
-        string += unichr(value)
+        string += chr(value)
         value = pointer.stack_pop()
-    pointer.stack.push(call(string))
+    process = os.system(string)
+    pointer.stack.append(process)
     return False, True
 
 

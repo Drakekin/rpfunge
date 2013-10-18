@@ -10,9 +10,9 @@ def mainloop(grid):
 
 def parse(input_program):
     grid = Grid()
-    newline_characters = ["\r", "\n", "\r\n"]
-    for newline_character in newline_characters:
-        input_program = input_program.replace(newline_character, "\n")
+    # newline_characters = ["\r", "\n", "\r\n"]
+    # for newline_character in newline_characters:
+    #     input_program = input_program.replace(newline_character, "\n")
     for y, line in enumerate(input_program.split("\n")):
         for x, char in enumerate(line):
             if char == " ":
