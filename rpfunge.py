@@ -1,16 +1,11 @@
 import sys
 from befunge98 import mainloop, parse
 import os
+from funge import read_file
 
 
-def run(fp):
-    program_contents = ""
-    while True:
-        read = os.read(fp, 4096)
-        if len(read) == 0:
-            break
-        program_contents += read
-    os.close(fp)
+def run(filename):
+    program_contents = read_file(filename)
     program = parse(program_contents)
     mainloop(program)
 
@@ -22,7 +17,7 @@ def entry_point(argv):
         print "You must supply a filename"
         return 1
 
-    run(os.open(filename, os.O_RDONLY, 0777))
+    run(filename)
     return 0
 
 

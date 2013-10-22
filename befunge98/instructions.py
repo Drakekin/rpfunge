@@ -1,6 +1,6 @@
 import os
 from time import time
-from funge import DEFAULT_INSTRUCTION, is_hex, random_integer
+from funge import DEFAULT_INSTRUCTION, is_hex, random_integer, load_string, read_file
 from pointer import Pointer
 import vec
 
@@ -218,7 +218,20 @@ def push_ascii(pointer):
 
 @register_instruction("i")
 def load_file(pointer):
-    raise NotImplementedError("File Loading Not Implemented")  # TODO: Implement file loading
+    filename = ""
+    char = pointer.stack_pop()
+    while char:
+        filename += chr(char)
+        char = pointer.stack_pop()
+    sx, sy = pointer.storage_offset
+    flags = pointer.stack_pop()
+    y = pointer.stack_pop() + sy
+    x = pointer.stack_pop() + sx
+    #y2 = pointer.stack_pop() + sy
+    #x2 = pointer.stack_pop() + sx
+    (xa, ya), (xb, yb) = load_string(pointer.program, read_file(filename), (x, y))
+    pointer.stack += [xb, yb, xa, ya]
+    return False, True
 
 
 @register_instruction("j")

@@ -1,3 +1,5 @@
+import os
+
 try:
     from rpython.rlib.rrandom import Random
 except ImportError:
@@ -28,6 +30,28 @@ def DEFAULT_INSTRUCTION(pointer):
         pointer.stack.append(int(char, 16))
         return False, True
     return True, True
+
+
+def read_file(filename):
+    contents = ""
+    fp = os.open(filename, os.O_RDONLY, 0777)
+    while True:
+        read = os.read(fp, 4096)
+        if len(read) == 0:
+            break
+        contents += read
+    os.close(fp)
+    return contents
+
+
+def load_string(grid, input_program, (dx, dy)):
+    x, y = 0, 0
+    for y, line in enumerate(input_program.split("\n")):
+        for x, char in enumerate(line):
+            if char == " ":
+                continue
+            grid.set((dx + x, dy + y), char)
+    return (dx, dy), (x, y)
 
 
 def random_integer(min=0, max=None):

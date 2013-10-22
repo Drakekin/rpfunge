@@ -1,3 +1,4 @@
+from funge import load_string
 from pointer import Pointer
 from befunge98.instructions import INSTRUCTIONS as befunge
 from grid import TwoDimensionalLaheySpace as Grid
@@ -10,11 +11,7 @@ def mainloop(grid):
 
 def parse(input_program):
     grid = Grid()
-    for y, line in enumerate(input_program.split("\n")):
-        for x, char in enumerate(line):
-            if char == " ":
-                continue
-            grid.set((x, y), char)
+    load_string(grid, input_program, (0, 0))
     Pointer(befunge, grid)
     return grid
 
