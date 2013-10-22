@@ -21,6 +21,13 @@ run the following command:
 
     python [path to pypy]/rpython/bin/rpython rpfunge.py
 
-This will produce a binary called `rpfunge-c`
+This will produce a binary called `rpfunge-c` which can then run befunge98 programs
+
+TODO
+====
+
+* Implement stack-of-stack functions
+* Implement file output
+* Implement JIT hinting
 
 [befunge98-spec]: http://quadium.net/funge/spec98.html "Funge 98 Final Specification"
