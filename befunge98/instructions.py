@@ -1,8 +1,7 @@
 import os
 from time import time
-from funge import DEFAULT_INSTRUCTION, is_hex
+from funge import DEFAULT_INSTRUCTION, is_hex, random_integer
 import vec
-
 
 INSTRUCTIONS = {}
 
@@ -26,7 +25,7 @@ def plus(pointer):
 def minus(pointer):
     a = pointer.stack_pop()
     b = pointer.stack_pop()
-    pointer.stack.append(a + b)
+    pointer.stack.append(a - b)
     return False, True
 
 
@@ -92,17 +91,15 @@ def down(pointer):
 
 @register_instruction("[")
 def turn_left(pointer):
-    # TODO: Rewrite to be correct
-    directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-    pointer.velocity = directions[directions.index(pointer.velocity)-1]
+    x, y = pointer.velocity
+    pointer.velocity = y, -x
     return False, True
 
 
 @register_instruction("]")
 def turn_right(pointer):
-    # TODO: Rewrite to be correct
-    directions = [(1, 0), (0, -1), (-1, 0), (0, 1)]
-    pointer.velocity = directions[directions.index(pointer.velocity)-1]
+    x, y = pointer.velocity
+    pointer.velocity = -y, x
     return False, True
 
 
@@ -120,11 +117,9 @@ def right(pointer):
 
 @register_instruction("?")
 def random_direction(pointer):
-    # TODO: Rewrite to work with RPython
-    # directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-    # pointer.velocity = choice(directions)
-    # return False, True
-    raise NotImplementedError("RPython cannot use the random library")
+    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    pointer.velocity = directions[random_integer(0, 3)]
+    return False, True
 
 
 @register_instruction("_")
@@ -305,6 +300,7 @@ def system_info(pointer):
 def end_program(pointer):
     os._exit(pointer.stack_pop())
     return False, False  # Just in case.
+
 
 @register_instruction("'")
 def fetch_char(pointer):

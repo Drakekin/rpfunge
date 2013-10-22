@@ -21,23 +21,21 @@ class Pointer(object):
 
     def tick(self):
         self.position = self.lahey_constrain(self.program)
-        self.move()
         instruction = self.program.__getitem__(self.position)
+        cont, alive = False, True
         if self.push_mode:
             if instruction == '"':
                 self.push_mode = False
-                return False, True
             else:
                 self.stack.append(ord(instruction))
-                return False, True
         else:
             if instruction in self.instructions:
                 operation = self.instructions[instruction]
                 cont, alive = operation(self)
-                return cont, alive
-                # return False, True
             else:
-                return DEFAULT_INSTRUCTION(self)
+                cont, alive = DEFAULT_INSTRUCTION(self)
+        self.move()
+        return cont, alive
 
     def lahey_constrain(self, grid):
         if vec.in_bounds(self.position, grid.extents()):
