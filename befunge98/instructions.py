@@ -29,6 +29,7 @@ def minus(pointer):
     return False, True
 
 
+@register_instruction("*")
 def multiply(pointer):
     a = pointer.stack_pop()
     b = pointer.stack_pop()
@@ -55,10 +56,10 @@ def mod(pointer):
 @register_instruction(";")
 def skip(pointer):
     pointer.move()
-    value = pointer.program.__getitem__(pointer.position)
+    value = pointer.program.get(pointer.position)
     while not value == ";":
         pointer.move()
-        value = pointer.program.__getitem__(pointer.position)
+        value = pointer.program.get(pointer.position)
     return False, True
 
 
@@ -187,7 +188,7 @@ def put(pointer):
     x = pointer.stack_pop()
     v = pointer.stack_pop()
     location = vec.add((x, y), pointer.storage_offset)
-    pointer.program.__setitem__(location, chr(v))
+    pointer.program.set(location, chr(v))
     return False, True
 
 
@@ -196,7 +197,7 @@ def get(pointer):
     y = pointer.stack_pop()
     x = pointer.stack_pop()
     location = vec.add((x, y), pointer.storage_offset)
-    pointer.stack.append(ord(pointer.program.__getitem__(location)))
+    pointer.stack.append(ord(pointer.program.get(location)))
     return False, True
 
 
@@ -216,7 +217,7 @@ def push_ascii(pointer):
 
 @register_instruction("i")
 def load_file(pointer):
-    raise NotImplementedError("File Loading Not Implemented")
+    raise NotImplementedError("File Loading Not Implemented")  # TODO: Implement file loading
 
 
 @register_instruction("j")
@@ -229,7 +230,7 @@ def jump(pointer):
 
 @register_instruction("k")
 def repeat(pointer):
-    instruction = pointer.program.__getitem__(vec.add(pointer.position, pointer.velocity))
+    instruction = pointer.program.get(vec.add(pointer.position, pointer.velocity))
     if instruction in INSTRUCTIONS:
         operation = INSTRUCTIONS[instruction]
     else:
@@ -248,7 +249,7 @@ def clear_stack(pointer):
 
 @register_instruction("o")
 def output_file(pointer):
-    raise NotImplementedError("File output not implemented")
+    raise NotImplementedError("File output not implemented")  # TODO: Implement file savin
 
 
 @register_instruction("y")
@@ -304,7 +305,7 @@ def end_program(pointer):
 
 @register_instruction("'")
 def fetch_char(pointer):
-    char = pointer.program.__getitem__(vec.add(pointer.position, pointer.velocity))
+    char = pointer.program.get(vec.add(pointer.position, pointer.velocity))
     pointer.stack.append(ord(char))
     pointer.move()
     return False, True
@@ -312,7 +313,7 @@ def fetch_char(pointer):
 
 @register_instruction("s")
 def store_char(pointer):
-    pointer.program.__setitem__(vec.add(pointer.position, pointer.velocity), chr(pointer.stack_pop()))
+    pointer.program.set(vec.add(pointer.position, pointer.velocity), chr(pointer.stack_pop()))
     pointer.move()
     return False, True
 

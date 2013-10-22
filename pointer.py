@@ -21,7 +21,7 @@ class Pointer(object):
 
     def tick(self):
         self.position = self.lahey_constrain(self.program)
-        instruction = self.program.__getitem__(self.position)
+        instruction = self.program.get(self.position)
         cont, alive = False, True
         if self.push_mode:
             if instruction == '"':
@@ -38,6 +38,8 @@ class Pointer(object):
         return cont, alive
 
     def lahey_constrain(self, grid):
+        # TODO: Fix the bug whereby if the pointer is outside the program space but pointing towards it, the pointer
+        #       is locked in place
         if vec.in_bounds(self.position, grid.extents()):
             return self.position
 

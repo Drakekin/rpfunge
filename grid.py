@@ -46,9 +46,9 @@ class TwoDimensionalLaheySpace(object):
         extents = ((minx, miny), (maxx, maxy))
         return extents
 
-    def __getitem__(self, coord):
+    def get(self, coord):
         return self.storage.get(coord, " ")
 
-    def __setitem__(self, coord, value):
+    def set(self, coord, value):
         assert len(coord) == 2
         self.storage[coord] = value

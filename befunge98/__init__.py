@@ -17,7 +17,7 @@ def parse(input_program):
         for x, char in enumerate(line):
             if char == " ":
                 continue
-            grid.__setitem__((x, y), char)
+            grid.set((x, y), char)
     grid.pointers.append(Pointer(befunge, grid))
     return grid
 
