@@ -229,7 +229,11 @@ def load_file(pointer):
     x = pointer.stack_pop() + sx
     #y2 = pointer.stack_pop() + sy
     #x2 = pointer.stack_pop() + sx
-    (xa, ya), (xb, yb) = load_string(pointer.program, read_file(filename), (x, y))
+    file_content = read_file(filename)
+    if flags % 2:
+        # If the LSB of flags is high (i.e. flags is odd) treat file as a single line
+        file_content = file_content.replace("\n", "a")
+    (xa, ya), (xb, yb) = load_string(pointer.program, file_content, (x, y))
     pointer.stack += [xb, yb, xa, ya]
     return False, True
 
