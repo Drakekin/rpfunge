@@ -1,6 +1,7 @@
 import os
 from time import time
 from funge import DEFAULT_INSTRUCTION, is_hex, random_integer
+from pointer import Pointer
 import vec
 
 INSTRUCTIONS = {}
@@ -249,7 +250,7 @@ def clear_stack(pointer):
 
 @register_instruction("o")
 def output_file(pointer):
-    raise NotImplementedError("File output not implemented")  # TODO: Implement file savin
+    raise NotImplementedError("File output not implemented")  # TODO: Implement file saving
 
 
 @register_instruction("y")
@@ -320,14 +321,9 @@ def store_char(pointer):
 
 @register_instruction("t")
 def split(pointer):
-    # TODO: Reimplement to fit new Pointer
-    raise NotImplementedError("Single threaded only")
-    # pos = pointer.position
-    # vx, vy = pointer.velocity
-    # vel = (vx * -1, vy * -1)
-    # new_pointer = Pointer(2, pointer.program, pointer.execute, pointer.pointers)
-    # new_pointer.position = pos
-    # new_pointer.velocity = vel
+    new_pointer = Pointer(pointer.instructions, pointer.program, pointer.position, vec.invert(pointer.velocity))
+    new_pointer.move()
+    return False, True
 
 
 @register_instruction("z")

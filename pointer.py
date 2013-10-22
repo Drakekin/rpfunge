@@ -12,6 +12,7 @@ class Pointer(object):
         self.instructions = language
         self.program = program
         self.push_mode = False
+        self.program.pointers.append(self)
 
     def stack_pop(self):
         try:
