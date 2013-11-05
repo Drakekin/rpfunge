@@ -1,6 +1,5 @@
 import sys
 from befunge98 import mainloop, parse
-import os
 from funge import read_file
 
 

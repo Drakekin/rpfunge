@@ -1,5 +1,19 @@
 import vec
 from funge import DEFAULT_INSTRUCTION
+# So that you can still run this module under standard CPython, I add this
+# import guard that creates a dummy class instead.
+try:
+    from rpython.rlib.jit import JitDriver
+except ImportError:
+    class JitDriver(object):
+        def __init__(self, **kw):
+            pass
+
+        def jit_merge_point(self, **kw):
+            pass
+
+        def can_enter_jit(self, **kw):
+            pass
 
 
 class Pointer(object):
@@ -12,7 +26,14 @@ class Pointer(object):
         self.instructions = language
         self.program = program
         self.push_mode = False
-        self.program.pointers.append(self)
+        # self.jitdriver = JitDriver(
+        #     greens=[
+        #         "velocity", "location", "storage_offset"
+        #     ], reds=[
+        #         "stack", "stack_of_stacks"
+        #     ]
+        # )
+        self.program.pointer = self
 
     def stack_pop(self):
         try:
@@ -24,6 +45,13 @@ class Pointer(object):
         self.position = self.lahey_constrain(self.program)
         instruction = self.program.get(self.position)
         cont, alive = False, True
+        # self.jitdriver.jit_merge_point(
+        #     velocity=self.velocity,
+        #     location=self.position,
+        #     storage_offset=self.storage_offset,
+        #     stack=self.stack,
+        #     stack_of_stacks=self.stack_of_stacks
+        # )
         if self.push_mode:
             if instruction == '"':
                 self.push_mode = False

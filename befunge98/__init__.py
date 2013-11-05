@@ -5,7 +5,7 @@ from grid import TwoDimensionalLaheySpace as Grid
 
 
 def mainloop(grid):
-    while len(grid.pointers):
+    while grid.pointer:
         grid.tick()
 
 

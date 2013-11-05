@@ -337,11 +337,13 @@ def store_char(pointer):
     return False, True
 
 
+# Multifunge is not compatible with JIT
 @register_instruction("t")
 def split(pointer):
-    new_pointer = Pointer(pointer.instructions, pointer.program, pointer.position, vec.invert(pointer.velocity))
-    new_pointer.move()
-    return False, True
+    return reflect(pointer)
+#     new_pointer = Pointer(pointer.instructions, pointer.program, pointer.position, vec.invert(pointer.velocity))
+#     new_pointer.move()
+#     return False, True
 
 
 @register_instruction("z")

@@ -4,21 +4,16 @@ import vec
 class TwoDimensionalLaheySpace(object):
     def __init__(self):
         self.storage = {}
-        self.pointers = []
+        self.pointer = None
 
     def normalise(self, coord):
         return vec.constrain(coord, self.extents())
 
     def tick(self):
-        pointers = self.pointers
-        self.pointers = []
-        for pointer in pointers:
-            cont = True
-            alive = True
-            while cont:
-                cont, alive = pointer.tick()
-            if alive:
-                self.pointers.append(pointer)
+        if self.pointer:
+            cont, alive = self.pointer.tick()
+            if not alive:
+                self.pointer = None
 
     def lahey_constrain(self, vector, delta):
         if vec.in_bounds(vector, self.extents()):
