@@ -11,6 +11,7 @@ def register_instruction(instruction):
     def register(function):
         INSTRUCTIONS[instruction] = function
         return function
+
     return register
 
 
@@ -273,41 +274,41 @@ def output_file(pointer):
 @register_instruction("y")
 def system_info(pointer):
     t = int(time())
-    clock = t % 24*60*60
+    clock = t % 24 * 60 * 60
     day = t - clock
     x, y = pointer.position
     dx, dy = pointer.velocity
     sx, sy = pointer.storage_offset
     (lx, ly), (hx, hy) = pointer.program.extents()
     info_stack = [
-        0b11000,  # Unbuffered IO, = implemented, no i or o commands and no concurrency
-        8,  # Bytes per cell
-        0,  # Handprint
-        1,  # Version number
-        1,  # = behaves like the C function system()
-        ord("/"),  # Path sep
-        2,  # Number of dimensions
-        0,  # Pointer ID
-        0,  # Unused
-        y,
-        x,
-        dy,
-        dx,
-        sy,
-        sx,
-        ly,
-        lx,
-        hy,
-        hx,
-        day,
-        clock,
-        len(pointer.stack_of_stacks) + 1,
-        len(pointer.stack)
-    ] + [len(s) for s in pointer.stack_of_stacks]
+                     0b11000, # Unbuffered IO, = implemented, no i or o commands and no concurrency
+                     8, # Bytes per cell
+                     0, # Handprint
+                     1, # Version number
+                     1, # = behaves like the C function system()
+                     ord("/"), # Path sep
+                     2, # Number of dimensions
+                     0, # Pointer ID
+                     0, # Unused
+                     y,
+                     x,
+                     dy,
+                     dx,
+                     sy,
+                     sx,
+                     ly,
+                     lx,
+                     hy,
+                     hx,
+                     day,
+                     clock,
+                     len(pointer.stack_of_stacks) + 1,
+                     len(pointer.stack)
+                 ] + [len(s) for s in pointer.stack_of_stacks]
 
     i = pointer.stack_pop()
     if 0 < i <= len(info_stack):
-        pointer.stack.append(info_stack[i-1])
+        pointer.stack.append(info_stack[i - 1])
     else:
         while info_stack:
             pointer.stack.append(info_stack.pop())
@@ -349,54 +350,67 @@ def no_op(pointer):
 
 
 # TODO: Figure out why these functions do not work.
-#
-# @register_instruction("{")
-# def start_block(pointer):
-#     n = pointer.stack_pop()
-#     soss = []
-#     if n > 0:
-#         z = 0
-#         if n > len(pointer.stack):
-#             z = len(pointer.stack) - n
-#             n = len(pointer.stack)
-#         soss += ([0] * z) + pointer.stack[-n:]
-#         pointer.stack = pointer.stack[:-n]
-#     else:
-#         soss += abs(n) * [0]
-#
-#     x, y = pointer.storage_offset
-#     soss += [x, y]
-#     pointer.stack_of_stacks.append(soss)
-#     pointer.storage_offset = vec.add(pointer.position, pointer.velocity)
-#     return False, True
-#
-#
-# @register_instruction("}")
-# def end_block(pointer):
-#     if not pointer.stack_of_stacks:
-#         return
-#
-#     n = pointer.stack_pop()
-#     soss = pointer.stack_of_stacks.pop()
-#     pointer.storage_offset = soss[-2:]
-#     soss = soss[:-2]
-#     if n > 0:
-#         z = 0
-#         if n > len(soss):
-#             z = len(soss) - n
-#             n = len(soss)
-#         pointer.stack += ([0] * z) + soss[-n:]
-#         soss = soss[:-n]
-#     else:
-#         soss = soss[:n]
-#
-#     x, y = pointer.storage_offset
-#     soss += [x, y]
-#     pointer.stack_of_stacks.append(soss)
-#     pointer.storage_offset = vec.add(pointer.position, pointer.velocity)
-#     return False, True
-#
-#
+@register_instruction("{")
+def start_block(pointer):
+    n = pointer.stack_pop()
+    soss = pointer.stack
+    if n < 0:
+        toss = [0] * (n * -1)
+    elif n > len(soss):
+        i = n - len(soss)
+        toss = [0] * i + soss
+        soss = []
+    else:
+        s = len(soss) - n
+        assert s >= 0
+        toss = soss[s:]
+        soss = soss[:s]
+    sx, sy = pointer.storage_offset
+    soss += [sx, sy]
+    pointer.storage_offset = vec.add(pointer.position, pointer.velocity)
+    pointer.stack_of_stacks.append(soss)
+    pointer.stack = toss
+    return False, True
+
+
+@register_instruction("}")
+def end_block(pointer):
+    if not pointer.stack_of_stacks:
+        return reflect(pointer)
+
+    toss = pointer.stack
+    soss = pointer.stack_of_stacks.pop()
+    n = pointer.stack_pop()
+    try:
+        sy = soss.pop()
+    except IndexError:
+        sy = 0
+    try:
+        sx = soss.pop()
+    except IndexError:
+        sx = 0
+
+    if n < 0:
+        for _ in range(abs(n)):
+            try:
+                soss.pop()
+            except IndexError:
+                pass
+    elif n > len(toss):
+        i = n - len(soss)
+        soss += [0] * i + toss
+    else:
+        s = len(toss) - n
+        assert s >= 0
+        soss += toss[s:]
+
+    pointer.stack = soss
+    pointer.stack_of_stacks.pop()
+    pointer.storage_offset = (sx, sy)
+
+    return False, True
+
+
 # @register_instruction("u")
 # def transfer(pointer):
 #     if not pointer.stack_of_stacks:
