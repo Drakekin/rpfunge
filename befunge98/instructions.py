@@ -411,23 +411,23 @@ def end_block(pointer):
     return False, True
 
 
-# @register_instruction("u")
-# def transfer(pointer):
-#     if not pointer.stack_of_stacks:
-#         return
-#
-#     n = pointer.stack_pop()
-#     soss = pointer.stack_of_stacks[-1]
-#     if n > 0:
-#         dest, source = pointer.stack, soss
-#     elif n == 0:
-#         return
-#     else:
-#         dest, source = soss, pointer.stack
-#
-#     for _ in range(abs(n)):
-#         dest.append(source.pop())
-#     return False, True
+@register_instruction("u")
+def transfer(pointer):
+    if not pointer.stack_of_stacks:
+        return reflect(pointer)
+
+    n = pointer.stack_pop()
+    soss = pointer.stack_of_stacks[-1]
+    if n > 0:
+        dest, source = pointer.stack, soss
+    elif n == 0:
+        return False, True
+    else:
+        dest, source = soss, pointer.stack
+
+    for _ in range(abs(n)):
+        dest.append(source.pop())
+    return False, True
 
 
 @register_instruction("@")
