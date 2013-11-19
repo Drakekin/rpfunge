@@ -1,12 +1,11 @@
 import sys
-from befunge98 import mainloop, parse
+from befunge98 import run as run_program
 from funge import read_file
 
 
 def run(filename):
     program_contents = read_file(filename)
-    program = parse(program_contents)
-    mainloop(program)
+    run_program(program_contents)
 
 
 def entry_point(argv):
