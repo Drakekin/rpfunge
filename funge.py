@@ -35,11 +35,10 @@ def DEFAULT_INSTRUCTION(pointer):
 def read_file(filename):
     contents = ""
     fp = os.open(filename, os.O_RDONLY, 0777)
-    while True:
-        read = os.read(fp, 4096)
-        if len(read) == 0:
-            break
+    read = os.read(fp, 4096)
+    while len(read):
         contents += read
+        read = os.read(fp, 4096)
     os.close(fp)
     return contents
 

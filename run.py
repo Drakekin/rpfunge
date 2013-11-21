@@ -12,4 +12,4 @@ if __name__ == "__main__":
         )
         run(StringIO(program))
     else:
-        run(open(argv[1], 'r'))
+        run(open(argv[1], 'r').read())

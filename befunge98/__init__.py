@@ -18,6 +18,11 @@ except ImportError:
         def can_enter_jit(self, **kw):
             pass
 
+
+def jitpolicy(driver):
+    from rpython.jit.codewriter.policy import JitPolicy
+    return JitPolicy()
+
 jit_driver = JitDriver(
     greens=[
         'push_mode',
@@ -25,10 +30,11 @@ jit_driver = JitDriver(
         'position',
         'velocity',
         'storage_offset',
-        'program',
     ], reds=[
+        'program',
         'stack',
-        'stack_of_stacks'
+        'stack_of_stacks',
+        'visited_locations'
     ]
 )
 
@@ -53,11 +59,26 @@ def mainloop(program):
     stack = []
     stack_of_stacks = []
     push_mode = False
+    visited_locations = []
 
     while True:
         position = lahey_constrain(position, velocity, program)
         instruction = program.get(position)
         alive = True
+        if position in visited_locations:
+            # print "Jit Time!"
+            visited_locations = []
+            jit_driver.can_enter_jit(
+                push_mode=push_mode,
+                instruction=instruction,
+                position=position,
+                velocity=velocity,
+                storage_offset=storage_offset,
+                program=program,
+                stack=stack,
+                stack_of_stacks=stack_of_stacks,
+                visited_locations=visited_locations
+            )
         jit_driver.jit_merge_point(
             push_mode=push_mode,
             instruction=instruction,
@@ -66,8 +87,10 @@ def mainloop(program):
             storage_offset=storage_offset,
             program=program,
             stack=stack,
-            stack_of_stacks=stack_of_stacks
+            stack_of_stacks=stack_of_stacks,
+            visited_locations=visited_locations
         )
+        visited_locations.append(position)
         if push_mode:
             if instruction == '"':
                 push_mode = False

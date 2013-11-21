@@ -3,6 +3,11 @@ from befunge98 import run as run_program
 from funge import read_file
 
 
+def jitpolicy(driver):
+    from rpython.jit.codewriter.policy import JitPolicy
+    return JitPolicy()
+
+
 def run(filename):
     program_contents = read_file(filename)
     run_program(program_contents)
