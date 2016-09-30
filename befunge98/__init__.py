@@ -3,41 +3,6 @@ from grid import TwoDimensionalLaheySpace as Grid
 from befunge98.instructions import INSTRUCTIONS, move, stack_pop, DEFAULT_INSTRUCTION
 import vec
 
-# So that you can still run this module under standard CPython, I add this
-# import guard that creates a dummy class instead.
-try:
-    from rpython.rlib.jit import JitDriver
-except ImportError:
-    class JitDriver(object):
-        def __init__(self, **kw):
-            pass
-
-        def jit_merge_point(self, **kw):
-            pass
-
-        def can_enter_jit(self, **kw):
-            pass
-
-
-def jitpolicy(driver):
-    from rpython.jit.codewriter.policy import JitPolicy
-    return JitPolicy()
-
-jit_driver = JitDriver(
-    greens=[
-        'push_mode',
-        'instruction',
-        'position',
-        'velocity',
-        'storage_offset',
-    ], reds=[
-        'program',
-        'stack',
-        'stack_of_stacks',
-        'visited_locations'
-    ]
-)
-
 
 def lahey_constrain(position, velocity, program):
     # TODO: Fix the bug whereby if the pointer is outside the program space but pointing towards it, the pointer
@@ -65,31 +30,6 @@ def mainloop(program):
         position = lahey_constrain(position, velocity, program)
         instruction = program.get(position)
         alive = True
-        if position in visited_locations:
-            # print "Jit Time!"
-            visited_locations = []
-            jit_driver.can_enter_jit(
-                push_mode=push_mode,
-                instruction=instruction,
-                position=position,
-                velocity=velocity,
-                storage_offset=storage_offset,
-                program=program,
-                stack=stack,
-                stack_of_stacks=stack_of_stacks,
-                visited_locations=visited_locations
-            )
-        jit_driver.jit_merge_point(
-            push_mode=push_mode,
-            instruction=instruction,
-            position=position,
-            velocity=velocity,
-            storage_offset=storage_offset,
-            program=program,
-            stack=stack,
-            stack_of_stacks=stack_of_stacks,
-            visited_locations=visited_locations
-        )
         visited_locations.append(position)
         if push_mode:
             if instruction == '"':

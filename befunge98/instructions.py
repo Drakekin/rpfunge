@@ -224,9 +224,16 @@ def get(position, velocity, storage_offset, stack, stack_of_stacks, push_mode, p
 
 @register_instruction("&")
 def push_number(position, velocity, storage_offset, stack, stack_of_stacks, push_mode, program):
+    number = ""
     num = os.read(0, 1)[0]
-    if is_hex(num):
-        stack.append(int(num, 16))
+    while not num.isdigit():
+        num = os.read(0, 1)[0]
+    while num.isdigit():
+        number += num
+        num = os.read(0, 1)[0]
+
+    stack.append(int(number))
+
     return position, velocity, storage_offset, stack, stack_of_stacks, push_mode, program, True
 
 
@@ -399,14 +406,8 @@ def end_block(position, velocity, storage_offset, stack, stack_of_stacks, push_m
     toss = stack
     soss = stack_of_stacks.pop()
     n = stack_pop(stack)
-    try:
-        sy = soss.pop()
-    except IndexError:
-        sy = 0
-    try:
-        sx = soss.pop()
-    except IndexError:
-        sx = 0
+    sy = stack_pop(soss)
+    sx = stack_pop(soss)
 
     if n < 0:
         for _ in range(abs(n)):
@@ -423,7 +424,6 @@ def end_block(position, velocity, storage_offset, stack, stack_of_stacks, push_m
         soss += toss[s:]
 
     stack = soss
-    stack_of_stacks.pop()
     storage_offset = (sx, sy)
 
     return position, velocity, storage_offset, stack, stack_of_stacks, push_mode, program, True
@@ -444,7 +444,7 @@ def transfer(position, velocity, storage_offset, stack, stack_of_stacks, push_mo
         dest, source = soss, stack
 
     for _ in range(abs(n)):
-        dest.append(source.pop())
+        dest.append(stack_pop(source))
     return position, velocity, storage_offset, stack, stack_of_stacks, push_mode, program, True
 
 
